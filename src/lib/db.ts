@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
+import bcrypt from "bcryptjs";
 
 const DATA_DIR = path.resolve(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "messages.db");
@@ -23,6 +24,25 @@ function build(): Ctx {
   const cols = db.prepare("PRAGMA table_info(conversations)").all() as { name: string }[];
   if (!cols.some((c) => c.name === "jid")) {
     db.exec("ALTER TABLE conversations ADD COLUMN jid TEXT");
+  }
+
+  const usersTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
+  if (!usersTable) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        is_admin INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      )
+    `);
+  }
+
+  const count = (db.prepare("SELECT COUNT(*) as cnt FROM users").get() as { cnt: number }).cnt;
+  if (count === 0) {
+    const hash = bcrypt.hashSync("Orbit-Agent2026*", 10);
+    db.prepare("INSERT OR IGNORE INTO users (username, password_hash, is_admin) VALUES (?, ?, 1)").run("CEO-WESCOBAR", hash);
   }
 
   return { db };
@@ -66,6 +86,14 @@ CREATE TABLE IF NOT EXISTS outbox (
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 CREATE INDEX IF NOT EXISTS idx_outbox_pending ON outbox(sent, created_at);
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  is_admin INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
 `;
 
 export type ConversationMode = "AI" | "HUMAN";
@@ -228,4 +256,67 @@ export function deleteConversation(conversationId: number): void {
     db.prepare("DELETE FROM conversations WHERE id = ?").run(conversationId);
   });
   tx();
+}
+
+export interface User {
+  id: number;
+  username: string;
+  is_admin: number;
+  created_at: number;
+}
+
+interface UserRaw extends User {
+  password_hash: string;
+}
+
+export function createUser(username: string, password: string, isAdmin = false): User {
+  const hash = bcrypt.hashSync(password, 10);
+  const { db } = ctx();
+  const stmt = db.prepare(
+    "INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?) RETURNING id, username, is_admin, created_at"
+  ) as Database.Statement;
+  return stmt.get(username, hash, isAdmin ? 1 : 0) as User;
+}
+
+export function getUserByUsername(username: string): UserRaw | null {
+  const { db } = ctx();
+  const stmt = db.prepare("SELECT * FROM users WHERE username = ?") as Database.Statement;
+  return (stmt.get(username) as UserRaw) ?? null;
+}
+
+export function verifyUser(username: string, password: string): User | null {
+  const user = getUserByUsername(username);
+  if (!user) return null;
+  if (!bcrypt.compareSync(password, user.password_hash)) return null;
+  return { id: user.id, username: user.username, is_admin: user.is_admin, created_at: user.created_at };
+}
+
+export function listUsers(): User[] {
+  const { db } = ctx();
+  const stmt = db.prepare("SELECT id, username, is_admin, created_at FROM users ORDER BY created_at ASC") as Database.Statement;
+  return stmt.all() as User[];
+}
+
+export function deleteUser(userId: number): boolean {
+  const { db } = ctx();
+  const stmt = db.prepare("DELETE FROM users WHERE id = ?") as Database.Statement;
+  const result = stmt.run(userId);
+  return result.changes > 0;
+}
+
+export function userCount(): number {
+  const { db } = ctx();
+  const row = db.prepare("SELECT COUNT(*) as cnt FROM users").get() as { cnt: number };
+  return row.cnt;
+}
+
+export function seedAdminUser(): User {
+  const count = userCount();
+  if (count > 0) {
+    const existing = getUserByUsername("CEO-WESCOBAR");
+    if (existing) {
+      return { id: existing.id, username: existing.username, is_admin: existing.is_admin, created_at: existing.created_at };
+    }
+  }
+  return createUser("CEO-WESCOBAR", "Orbit-Agent2026*", true);
 }

@@ -57,7 +57,7 @@ export function ConversationPanel({ conversation, onRefresh }: ConversationPanel
   }, [conversation?.id]);
 
   useEffect(() => {
-    if (scrollRef.current && messages.length > 0) {
+    if (messages.length > 0 && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
@@ -140,7 +140,17 @@ export function ConversationPanel({ conversation, onRefresh }: ConversationPanel
         </div>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto p-4 flex flex-col gap-3"
+        style={{
+          backgroundImage: "url('/chat-bg.jpeg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundAttachment: "fixed",
+        }}
+      >
         {messages.length === 0 ? (
           <p className="text-neutral-600 text-sm text-center mt-8">
             Sin mensajes aún
