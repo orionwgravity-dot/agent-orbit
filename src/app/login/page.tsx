@@ -35,10 +35,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-950">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-950 px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm bg-neutral-900 border border-neutral-800 rounded-xl p-8 space-y-6"
+        className="w-full max-w-sm bg-neutral-900 border border-neutral-800 rounded-xl p-6 md:p-8 space-y-5 md:space-y-6"
       >
         <div className="text-center">
           <h1 className="text-xl font-semibold text-neutral-100">

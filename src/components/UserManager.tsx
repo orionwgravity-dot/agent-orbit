@@ -77,8 +77,8 @@ export function UserManager({ open, onClose }: UserManagerProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-xl p-4 md:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-neutral-100">
             Gestionar usuarios
@@ -92,7 +92,7 @@ export function UserManager({ open, onClose }: UserManagerProps) {
         </div>
 
         <form onSubmit={handleCreate} className="space-y-3">
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               value={newUsername}

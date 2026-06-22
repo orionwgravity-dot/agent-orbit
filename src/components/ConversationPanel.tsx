@@ -26,9 +26,10 @@ interface ConversationItem {
 interface ConversationPanelProps {
   conversation: ConversationItem | null;
   onRefresh: () => void;
+  onBack?: () => void;
 }
 
-export function ConversationPanel({ conversation, onRefresh }: ConversationPanelProps) {
+export function ConversationPanel({ conversation, onRefresh, onBack }: ConversationPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [sending, setSending] = useState(false);
@@ -117,14 +118,27 @@ export function ConversationPanel({ conversation, onRefresh }: ConversationPanel
 
   return (
     <section className="flex-1 flex flex-col bg-neutral-950">
-      <header className="h-14 bg-neutral-900 border-b border-neutral-800 flex items-center px-4 justify-between">
-        <div>
-          <p className="text-sm font-medium text-neutral-100">
-            {conversation.name || `+${conversation.phone}`}
-          </p>
-          {conversation.name && (
-            <p className="text-xs text-neutral-500">+{conversation.phone}</p>
+      <header className="h-14 bg-neutral-900 border-b border-neutral-800 flex items-center px-3 md:px-4 justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="md:hidden text-neutral-400 hover:text-neutral-200 shrink-0"
+              aria-label="Volver"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
           )}
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-neutral-100 truncate">
+              {conversation.name || `+${conversation.phone}`}
+            </p>
+            {conversation.name && (
+              <p className="text-xs text-neutral-500">+{conversation.phone}</p>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <ModeToggle
